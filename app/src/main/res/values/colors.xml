@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- "Deep Focus" theme seed colours. Compose handles the full Material 3 scheme;
+         these XML colours back the splash / theme bootstrap before Compose loads. -->
+    <color name="indigo">#5B6CFF</color>
+    <color name="amber">#FFB547</color>
+    <color name="bg_dark">#141527</color>
+</resources>

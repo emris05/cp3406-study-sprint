@@ -1,0 +1,9 @@
+# Normalise line endings — Kotlin/Gradle files use LF even on Windows.
+*.text eol=lf
+*.kt eol=lf
+*.kts eol=lf
+*.xml eol=lf
+*.gradle eol=lf
+*.toml eol=lf
+*.properties eol=lf
+*.md eol=lf

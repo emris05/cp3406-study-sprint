@@ -1,0 +1,10 @@
+# ============================================================
+#  COPY this file to "local.properties" and fill in your values.
+#  local.properties is GIT-IGNORED — never commit your real key.
+# ============================================================
+
+# Path to your Android SDK (Android Studio sets this automatically on first open).
+sdk.dir=C\:\\Users\\Deimos\\AppData\\Local\\Android\\Sdk
+
+# Your free OpenWeatherMap API key (signup: https://home.openweathermap.org/users/sign_up)
+OPEN_WEATHER_API_KEY=your_key_here
