@@ -1,138 +1,119 @@
-# Study Sprint 🎯
+# Study Sprint
 
-A Pomodoro-style focus timer for **university students**, with weather-aware break suggestions. Built for CP3406 (Mobile App Development) Assignment 3.
+A focus and learning app for university students, built for CP3406 (Mobile Computing Applications) Assignment 3. Study Sprint pairs a Pomodoro-style focus timer with weather-aware break suggestions, a task list that tracks time spent per subject, and a flashcard system that uses the SM-2 spaced-repetition algorithm to schedule reviews.
 
-Study Sprint helps students build a sustainable focus habit: work in focused intervals, take breaks that fit the conditions around them, and review how their study time adds up — all without manipulative gamification or invasive data collection.
+The app is designed around user autonomy rather than engagement metrics. There are no punitive streaks, no manipulative notifications, and no tracking. All data stays on the device.
 
----
+## Features
 
-## Core features
+**Focus timer.** A configurable Pomodoro cycle (focus, short break, long break). The engine is driven off the system clock rather than a sleep loop, so the countdown stays accurate across rotation and backgrounding without drift.
 
-| Feature | What it does |
-|---|---|
-| ⏱️ **Focus timer** | Configurable Pomodoro cycle (focus → short break → long break). Engine is driven by the system clock, so it survives screen rotation and backgrounding. |
-| 🌤️ **Weather-aware breaks** | Fetches current weather for a chosen city (OpenWeatherMap API) and suggests indoor or outdoor break activities. Falls back to an on-device activity library when offline. |
-| ✅ **Tasks** | Add study tasks, pick one to focus on, and the app logs time against it. |
-| 📊 **Statistics** | Total focus time, session count, current streak, and a per-task breakdown. |
-| 🔔 **Daily reminder** | Optional, fully opt-in notification at a time you choose. Respects Do-Not-Disturb. |
-| 🎨 **"Deep Focus" theme** | Dark-first Material 3 UI (indigo + amber) designed to be calm and immersive. |
+**Weather-aware breaks.** When a break begins the app fetches the current weather for a city the user specifies and suggests an indoor or outdoor activity accordingly. If the network call fails the app falls back to an on-device activity library, so the break screen is never empty. No location permission is requested.
+
+**Tasks.** The user can add study tasks, pick one to focus on, and the app logs the time spent on each. Completed focus sessions are credited to the active task captured at the start of the phase.
+
+**Flashcards with spaced repetition.** Decks of flashcards are reviewed using the SM-2 algorithm (the scheduling method Anki is based on). Cards the user knows well appear less often over time; cards they struggle with come back sooner. Each review presents a card, the user reveals the answer, then rates their recall on a four-point scale (again, hard, ok, easy). The algorithm updates the card's ease factor and interval accordingly.
+
+**Statistics.** Total focus time, session count, a day streak computed from session dates, and a per-task bar chart showing where time has gone.
+
+**Daily reminder.** An optional, opt-in notification at a chosen time. It respects Do Not Disturb and is off by default.
 
 ## Screens
 
 | Screen | Purpose |
 |---|---|
-| **Home / Dashboard** | Today's focus summary, quick-start, active task. |
-| **Focus** | The timer itself — the app's main "activity" screen. |
-| **Tasks** | Manage study tasks and pick the active one. |
-| **Statistics** | Progress, streak, per-task time. |
-| **Settings** | Timer lengths, sound, dark mode, reminder, weather city, data controls + privacy note. |
-
----
+| Home | Today's focus summary, quick-start button, active task, shortcuts to tasks and flashcards. |
+| Focus | The timer itself. Countdown ring, phase label, start/pause/skip controls, active task chip, break suggestion card. |
+| Tasks | Add, set active, complete, and delete study tasks. |
+| Flashcards | Deck list, deck detail (add and delete cards), and the spaced-repetition review screen. |
+| Statistics | Total focus, sessions, streak, per-task breakdown. |
+| Settings | Timer lengths, sound, dark mode, weather city, reminder toggle and time, data controls and privacy note. |
 
 ## Setup
 
-### 1. Get an API key
-Study Sprint uses the free **OpenWeatherMap** API for break suggestions.
+### API key
 
-1. Sign up at <https://home.openweathermap.org/users/sign_up>
-2. Sign in → your name (top right) → **My API keys**
-3. Copy the key. *(New keys take ~10 minutes to activate.)*
+Study Sprint uses the free OpenWeatherMap API for break suggestions. Sign up at https://home.openweathermap.org/users/sign_up and copy your API key from the My API keys page. New keys take around ten minutes to activate.
 
-### 2. Configure your key
-Copy the example file and paste your key in:
+### Configuration
 
-```bash
+Copy the example file and add your key:
+
+```
 cp local.properties.example local.properties
 ```
 
 Then edit `local.properties`:
 
-```properties
+```
 sdk.dir=C\:\\Users\\<you>\\AppData\\Local\\Android\\Sdk
-OPEN_WEATHER_API_KEY=your_actual_key_here
+OPEN_WEATHER_API_KEY=your_key_here
 ```
 
-`local.properties` is git-ignored, so your key never enters version control.
+The file is git-ignored, so the key never enters version control.
 
-### 3. Open & run
-1. Open Android Studio → **File → Open** → select the `StudySprint` folder.
-2. Let Gradle sync (first run downloads dependencies).
-3. Plug in a device or start an emulator (API 26+).
-4. Click **Run** ▶.
+### Running
 
----
+Open the project in Android Studio (File, Open, select the StudySprint folder). Let Gradle sync, then run on an emulator or device running API 26 or higher.
 
 ## Architecture
 
-Study Sprint follows **MVVM + Repository** with **Hilt** for dependency injection.
+Study Sprint follows MVVM with a repository layer, using Hilt for dependency injection. ViewModels hold UI state and survive configuration changes. Repositories are the single source of truth between Room (offline cache) and the network. Hilt wires concrete implementations to interfaces so they can be swapped for fakes in tests.
+
+Pure logic (the timer engine, the SM-2 algorithm, the streak calculator, the break suggestion picker) is kept in plain Kotlin classes with no Android dependencies. Where time is involved it is passed in as a parameter rather than read from the system clock, which makes every rule deterministic and unit-testable on the JVM.
 
 ```
-ui/                 # Compose screens, theming, navigation, reusable components
-  ├── theme/        # Colour, type, theme
-  ├── nav/          # NavHost + bottom navigation
-  ├── components/   # Shared composables (timer ring, cards, etc.)
-  ├── home/
-  ├── focus/
-  ├── tasks/
-  ├── stats/
-  └── settings/
+ui/                 Compose screens, theming, navigation, shared components
+  theme/            Colour, type, theme
+  nav/              NavHost and bottom navigation
+  components/       Countdown ring, break suggestion card
+  home/             Home screen and ViewModel
+  focus/            Focus screen and ViewModel
+  tasks/            Tasks screen and ViewModel
+  flashcards/       Deck list, deck detail, review screens and ViewModels
+  stats/            Statistics screen and ViewModel
+  settings/         Settings screen and ViewModel
 data/
-  ├── local/        # Room database, DAOs, entities
-  ├── remote/       # Retrofit weather API + DTOs
-  ├── repository/   # Repository implementations (single source of truth)
-  └── model/        # Domain models (UI-facing)
-di/                 # Hilt modules (Database, Network, App)
-work/               # WorkManager ReminderWorker
-util/               # Extensions, formatters
+  local/            Room database, DAOs, entities
+  remote/           Retrofit weather API and DTOs
+  repository/       Repository interfaces and implementations, mappers
+  model/            Domain models
+spacedrepetition/   SM-2 algorithm and card schedule
+timer/              Timer engine, break controller
+di/                 Hilt modules (database, network, repositories, utilities)
+util/               Stats calculator, phase alerter
+work/               WorkManager reminder worker
 ```
 
-**Key libraries:** Jetpack Compose · Material 3 · Navigation-Compose · Hilt · Room · Retrofit/OkHttp/Moshi · WorkManager.
-
-### Why this design
-- **ViewModels** hold UI state and survive configuration changes.
-- **Repository pattern** gives a single source of truth between Room (offline cache) and the network.
-- **Hilt** removes manual wiring and makes classes testable (constructors take interfaces, not concrete singletons).
-- **System-clock-based timer** (not a coroutine sleep loop) so the countdown stays accurate across backgrounding.
-
----
+Libraries: Jetpack Compose, Material 3, Navigation-Compose, Hilt, Room, Retrofit, OkHttp, Moshi, WorkManager.
 
 ## Testing
 
-```bash
-# Non-GUI unit tests (run on JVM — fast)
-./gradlew test
-
-# GUI / instrumented tests (run on device or emulator)
-./gradlew connectedAndroidTest
+```
+./gradlew test                  # non-GUI unit tests on the JVM
+./gradlew connectedAndroidTest  # GUI tests on a device or emulator
 ```
 
-- **Unit tests** cover the timer state machine, settings persistence, statistics calculation, break-suggestion logic, and weather fallback.
-- **GUI tests** use Compose's `createComposeRule()` to verify the Focus and Tasks screens.
-
----
+Unit tests cover the SM-2 algorithm (intervals, ease bounds, fail-reset), the timer state machine (tick, pause and resume, phase advancement, long-break cycle), streak calculation, break suggestion picking, and the clock formatter. GUI tests use Compose's `createComposeRule` to verify the Focus and Tasks screens render and respond to input.
 
 ## Ethical design
 
-This project explicitly addresses the ethical issues explored in Assessment 2:
+The project addresses the ethical issues explored in Assessment 2 through concrete design decisions rather than a checklist.
 
-- **Privacy by default.** All user data (tasks, sessions, settings) is stored **on-device only** in Room. The app sends no analytics and no personal data to any server. Cloud backup of the database is disabled.
-- **Minimal permissions.** No location permission is requested — weather uses a city name the user types. Only INTERNET and (opt-in) notification permissions are used.
-- **No dark / manipulative patterns.** The streak is informational only (no penalty for breaking it, no loss-aversion pressure). Reminders are opt-in and respect Do-Not-Disturb. There are no infinite loops, no paywalls, no monetisation.
-- **Transparency.** A plain-language privacy note in Settings explains exactly what is stored and what leaves the device, plus a one-tap "clear all data" action.
-- **Accessibility & inclusiveness.** Material 3 theming, large touch targets (≥48dp), content descriptions, dynamic font scaling, and high-contrast dark mode.
+Privacy by default. All user data (tasks, sessions, flashcards, settings) is stored on-device in Room. No analytics or personal data is transmitted to any server. Cloud backup of the database is explicitly disabled. The only network request sends a city name to OpenWeatherMap.
 
----
+Minimal permissions. No location permission is requested. Weather uses a city name the user types in. Only internet and an opt-in notification permission are used.
+
+No manipulative patterns. The streak is informational only; there is no penalty for breaking it and no loss-aversion pressure. Reminders are opt-in and respect Do Not Disturb. There are no infinite loops, no paywalls, and no monetisation.
+
+Transparency. A plain-language privacy note in Settings explains what is stored and what leaves the device, with a one-tap clear-all-data action.
+
+Accessibility. Material 3 theming, large touch targets, content descriptions for screen readers, dynamic font scaling, and a high-contrast dark theme.
 
 ## Version control
 
-This project uses Git on GitHub. Commit messages follow conventional prefixes (`feat:`, `fix:`, `test:`, `docs:`).
-
-```bash
-git log --oneline
-```
-
----
+The project uses Git on GitHub. Commit messages describe the work in plain language.
 
 ## Author
 
-**emris05** — CP3406, Assessment 3.
+emris05, CP3406 Assessment 3.

@@ -45,5 +45,8 @@ captures/
 # --- Mac OS X ---
 .DS_Store
 
+# --- Submission artifacts (reflection PDF etc.) — kept out of the repo ---
+docs/
+
 # --- Keep the gradle wrapper jar (do NOT ignore) ---
 !gradle/wrapper/gradle-wrapper.jar
