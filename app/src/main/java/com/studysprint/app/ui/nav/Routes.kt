@@ -13,6 +13,13 @@ sealed class Route(val route: String, val showInBottomBar: Boolean) {
     data object Tasks : Route("tasks", showInBottomBar = false)
     data object Stats : Route("stats", showInBottomBar = true)
     data object Settings : Route("settings", showInBottomBar = true)
+    data object Flashcards : Route("flashcards", showInBottomBar = false)
+    data object DeckDetail : Route("deck/{deckId}") {
+        fun build(deckId: Long) = "deck/$deckId"
+    }
+    data object Review : Route("review/{deckId}") {
+        fun build(deckId: Long) = "review/$deckId"
+    }
 }
 
 /** Bottom-nav entries (the four core screens the brief requires). */

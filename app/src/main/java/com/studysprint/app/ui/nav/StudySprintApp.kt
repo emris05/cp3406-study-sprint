@@ -24,6 +24,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.studysprint.app.R
 import com.studysprint.app.ui.focus.FocusScreen
+import com.studysprint.app.ui.flashcards.DeckDetailScreen
+import com.studysprint.app.ui.flashcards.DeckListScreen
+import com.studysprint.app.ui.flashcards.ReviewScreen
 import com.studysprint.app.ui.home.HomeScreen
 import com.studysprint.app.ui.settings.SettingsScreen
 import com.studysprint.app.ui.stats.StatsScreen
@@ -81,6 +84,7 @@ fun StudySprintApp() {
                 HomeScreen(
                     onNavigateToFocus = { navController.navigate(Route.Focus.route) },
                     onNavigateToTasks = { navController.navigate(Route.Tasks.route) },
+                    onNavigateToFlashcards = { navController.navigate(Route.Flashcards.route) },
                 )
             }
             composable(Route.Focus.route) {
@@ -96,6 +100,21 @@ fun StudySprintApp() {
             }
             composable(Route.Settings.route) {
                 SettingsScreen()
+            }
+            composable(Route.Flashcards.route) {
+                DeckListScreen(
+                    onBack = { navController.popBackStack() },
+                    onOpenDeck = { deckId -> navController.navigate(Route.DeckDetail.build(deckId)) },
+                )
+            }
+            composable(Route.DeckDetail.route) { backStackEntry ->
+                DeckDetailScreen(
+                    onBack = { navController.popBackStack() },
+                    onReview = { deckId -> navController.navigate(Route.Review.build(deckId)) },
+                )
+            }
+            composable(Route.Review.route) {
+                ReviewScreen(onBack = { navController.popBackStack() })
             }
         }
     }
