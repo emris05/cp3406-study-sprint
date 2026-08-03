@@ -8,8 +8,10 @@ import com.studysprint.app.data.repository.TaskRepository
 import com.studysprint.app.data.repository.TaskRepositoryImpl
 import com.studysprint.app.data.repository.WeatherRepository
 import com.studysprint.app.data.repository.WeatherRepositoryImpl
+import com.studysprint.app.timer.TimerEngine
 import dagger.Binds
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
@@ -34,4 +36,10 @@ abstract class AppModule {
 
     @Binds @Singleton
     abstract fun bindWeatherRepository(impl: WeatherRepositoryImpl): WeatherRepository
+
+    companion object {
+        /** Provided here (not constructed in the ViewModel) so tests can swap a fake engine. */
+        @Provides @Singleton
+        fun provideTimerEngine(): TimerEngine = TimerEngine()
+    }
 }
