@@ -3,6 +3,8 @@ package com.studysprint.app.di
 import android.content.Context
 import androidx.room.Room
 import com.studysprint.app.data.local.AppDatabase
+import com.studysprint.app.data.local.dao.CardDao
+import com.studysprint.app.data.local.dao.DeckDao
 import com.studysprint.app.data.local.dao.SessionDao
 import com.studysprint.app.data.local.dao.SettingsDao
 import com.studysprint.app.data.local.dao.TaskDao
@@ -29,4 +31,8 @@ object DatabaseModule {
     @Provides fun provideSessionDao(db: AppDatabase): SessionDao = db.sessionDao()
 
     @Provides fun provideSettingsDao(db: AppDatabase): SettingsDao = db.settingsDao()
+
+    @Provides fun provideDeckDao(db: AppDatabase): DeckDao = db.deckDao()
+
+    @Provides fun provideCardDao(db: AppDatabase): CardDao = db.cardDao()
 }

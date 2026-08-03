@@ -8,6 +8,8 @@ import com.studysprint.app.data.repository.TaskRepository
 import com.studysprint.app.data.repository.TaskRepositoryImpl
 import com.studysprint.app.data.repository.WeatherRepository
 import com.studysprint.app.data.repository.WeatherRepositoryImpl
+import com.studysprint.app.data.repository.FlashcardRepository
+import com.studysprint.app.data.repository.FlashcardRepositoryImpl
 import com.studysprint.app.timer.BreakController
 import com.studysprint.app.timer.TimerEngine
 import com.studysprint.app.util.PhaseAlerter
@@ -42,6 +44,9 @@ abstract class AppModule {
 
     @Binds @Singleton
     abstract fun bindPhaseAlerter(impl: PhaseAlerterImpl): PhaseAlerter
+
+    @Binds @Singleton
+    abstract fun bindFlashcardRepository(impl: FlashcardRepositoryImpl): FlashcardRepository
 
     companion object {
         /** Provided here (not constructed in the ViewModel) so tests can swap a fake engine. */

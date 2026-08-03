@@ -3,11 +3,16 @@ package com.studysprint.app.data.repository
 import com.studysprint.app.data.local.entity.SessionEntity
 import com.studysprint.app.data.local.entity.SettingsEntity
 import com.studysprint.app.data.local.entity.TaskEntity
+import com.studysprint.app.data.local.entity.DeckEntity
+import com.studysprint.app.data.local.entity.CardEntity
 import com.studysprint.app.data.model.AppSettings
+import com.studysprint.app.data.model.Deck
+import com.studysprint.app.data.model.Flashcard
 import com.studysprint.app.data.model.FocusSession
 import com.studysprint.app.data.model.StudyTask
 import com.studysprint.app.data.model.WeatherInfo
 import com.studysprint.app.data.remote.dto.WeatherResponse
+import com.studysprint.app.spacedrepetition.CardSchedule
 import com.studysprint.app.ui.theme.DarkModeChoice
 
 /** Entity <-> domain mapping, isolated for testability. */
@@ -80,3 +85,47 @@ internal fun WeatherResponse.toDomain(): WeatherInfo {
         isNiceOutdoors = isNice,
     )
 }
+
+// --- Flashcard mappings ---
+
+internal fun DeckEntity.toDomain(cardCount: Int = 0, dueCount: Int = 0) = Deck(
+    id = id,
+    name = name,
+    description = description,
+    cardCount = cardCount,
+    dueCount = dueCount,
+    createdAt = createdAt,
+)
+
+internal fun Deck.toEntity() = DeckEntity(
+    id = id,
+    name = name.trim(),
+    description = description.trim(),
+    createdAt = createdAt,
+)
+
+internal fun CardEntity.toDomain() = Flashcard(
+    id = id,
+    deckId = deckId,
+    front = front,
+    back = back,
+    schedule = CardSchedule(
+        repetitions = repetitions,
+        easeFactor = easeFactor,
+        intervalDays = intervalDays,
+        dueEpochMillis = dueEpochMillis,
+    ),
+    createdAt = createdAt,
+)
+
+internal fun Flashcard.toEntity() = CardEntity(
+    id = id,
+    deckId = deckId,
+    front = front.trim(),
+    back = back.trim(),
+    repetitions = schedule.repetitions,
+    easeFactor = schedule.easeFactor,
+    intervalDays = schedule.intervalDays,
+    dueEpochMillis = schedule.dueEpochMillis,
+    createdAt = createdAt,
+)
