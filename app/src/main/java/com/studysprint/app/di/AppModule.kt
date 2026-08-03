@@ -10,6 +10,8 @@ import com.studysprint.app.data.repository.WeatherRepository
 import com.studysprint.app.data.repository.WeatherRepositoryImpl
 import com.studysprint.app.timer.BreakController
 import com.studysprint.app.timer.TimerEngine
+import com.studysprint.app.util.PhaseAlerter
+import com.studysprint.app.util.PhaseAlerterImpl
 import dagger.Binds
 import dagger.Module
 import dagger.Provides
@@ -37,6 +39,9 @@ abstract class AppModule {
 
     @Binds @Singleton
     abstract fun bindWeatherRepository(impl: WeatherRepositoryImpl): WeatherRepository
+
+    @Binds @Singleton
+    abstract fun bindPhaseAlerter(impl: PhaseAlerterImpl): PhaseAlerter
 
     companion object {
         /** Provided here (not constructed in the ViewModel) so tests can swap a fake engine. */

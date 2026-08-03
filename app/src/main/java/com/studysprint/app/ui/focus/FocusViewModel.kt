@@ -60,6 +60,7 @@ class FocusViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository,
     private val engine: TimerEngine,
     private val breakController: BreakController,
+    private val phaseAlerter: com.studysprint.app.util.PhaseAlerter,
 ) : ViewModel() {
 
     private val _timerState = MutableStateFlow<TimerState?>(null)
@@ -141,6 +142,8 @@ class FocusViewModel @Inject constructor(
                     if (ticked.phase == TimerPhase.Focus) recordFocusSession(ticked)
                     val advanced = engine.advance(ticked, settings)
                     _timerState.value = advanced
+                    // Alert the user that the phase is over (sound + haptic).
+                    phaseAlerter.phaseComplete(soundEnabled = settings.soundEnabled)
                     // When a break begins, fetch weather + pick a break activity.
                     if (advanced.phase.isBreak) loadBreakSuggestion(settings.weatherCity)
                     // Auto-start the next phase so the cycle keeps flowing.
