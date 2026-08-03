@@ -8,6 +8,7 @@ import com.studysprint.app.data.repository.TaskRepository
 import com.studysprint.app.data.repository.TaskRepositoryImpl
 import com.studysprint.app.data.repository.WeatherRepository
 import com.studysprint.app.data.repository.WeatherRepositoryImpl
+import com.studysprint.app.timer.BreakController
 import com.studysprint.app.timer.TimerEngine
 import dagger.Binds
 import dagger.Module
@@ -41,5 +42,9 @@ abstract class AppModule {
         /** Provided here (not constructed in the ViewModel) so tests can swap a fake engine. */
         @Provides @Singleton
         fun provideTimerEngine(): TimerEngine = TimerEngine()
+
+        /** BreakController is deterministic given a seed; default Random is fine for prod. */
+        @Provides @Singleton
+        fun provideBreakController(): BreakController = BreakController()
     }
 }

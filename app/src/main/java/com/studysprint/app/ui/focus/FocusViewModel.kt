@@ -3,12 +3,15 @@ package com.studysprint.app.ui.focus
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.studysprint.app.data.model.AppSettings
+import com.studysprint.app.data.model.BreakSuggestion
 import com.studysprint.app.data.model.StudyTask
 import com.studysprint.app.data.model.TimerPhase
 import com.studysprint.app.data.model.TimerStatus
 import com.studysprint.app.data.repository.SessionRepository
 import com.studysprint.app.data.repository.SettingsRepository
 import com.studysprint.app.data.repository.TaskRepository
+import com.studysprint.app.data.repository.WeatherRepository
+import com.studysprint.app.timer.BreakController
 import com.studysprint.app.timer.TimerEngine
 import com.studysprint.app.timer.TimerState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,6 +36,8 @@ data class FocusUiState(
     val status: TimerStatus = TimerStatus.Idle,
     val completedFocusSessions: Int = 0,
     val activeTask: StudyTask? = null,
+    val breakSuggestion: BreakSuggestion? = null,
+    val isLoadingWeather: Boolean = false,
 )
 
 /**
@@ -52,10 +57,14 @@ class FocusViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val taskRepository: TaskRepository,
     private val sessionRepository: SessionRepository,
+    private val weatherRepository: WeatherRepository,
     private val engine: TimerEngine,
+    private val breakController: BreakController,
 ) : ViewModel() {
 
     private val _timerState = MutableStateFlow<TimerState?>(null)
+    private val _breakSuggestion = MutableStateFlow<BreakSuggestion?>(null)
+    private val _isLoadingWeather = MutableStateFlow(false)
     /** The task id locked in at the start of the current focus phase, if any. */
     private var focusPhaseTaskId: Long? = null
     /** Latest snapshot of the active task, for display. */
@@ -75,6 +84,8 @@ class FocusViewModel @Inject constructor(
             status = resolved.status,
             completedFocusSessions = resolved.completedFocusSessions,
             activeTask = activeTask,
+            breakSuggestion = _breakSuggestion.value,
+            isLoadingWeather = _isLoadingWeather.value,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -130,6 +141,8 @@ class FocusViewModel @Inject constructor(
                     if (ticked.phase == TimerPhase.Focus) recordFocusSession(ticked)
                     val advanced = engine.advance(ticked, settings)
                     _timerState.value = advanced
+                    // When a break begins, fetch weather + pick a break activity.
+                    if (advanced.phase.isBreak) loadBreakSuggestion(settings.weatherCity)
                     // Auto-start the next phase so the cycle keeps flowing.
                     _timerState.value = engine.start(advanced)
                 } else {
@@ -146,6 +159,22 @@ class FocusViewModel @Inject constructor(
         )
         focusPhaseTaskId?.let { taskRepository.addFocusSeconds(it, state.phaseDurationSeconds) }
         if (state.phase == TimerPhase.Focus) focusPhaseTaskId = null
+    }
+
+    /**
+     * Fetch weather for [city] and pick a matching break activity. If the fetch
+     * fails (offline, bad key) we still suggest something from the offline
+     * library — never leave the user staring at an empty break screen.
+     */
+    private fun loadBreakSuggestion(city: String) {
+        // Clear the old card first so a stale suggestion never lingers.
+        _breakSuggestion.value = null
+        _isLoadingWeather.value = true
+        viewModelScope.launch {
+            val weather = weatherRepository.getCurrentWeather(city)
+            _breakSuggestion.value = breakController.suggest(weather)
+            _isLoadingWeather.value = false
+        }
     }
 
     private suspend fun currentOrInitial(settings: AppSettings): TimerState =

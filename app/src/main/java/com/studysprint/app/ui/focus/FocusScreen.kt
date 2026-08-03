@@ -32,6 +32,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.studysprint.app.R
 import com.studysprint.app.data.model.TimerPhase
 import com.studysprint.app.data.model.TimerStatus
+import com.studysprint.app.ui.components.BreakSuggestionCard
 import com.studysprint.app.ui.components.CountdownRing
 
 /**
@@ -90,6 +91,14 @@ fun FocusScreen(
             taskTitle = state.activeTask?.title,
             onPickTask = onNavigateToTasks,
         )
+
+        // Break suggestion card — only relevant during a break phase.
+        if (state.phase.isBreak) {
+            BreakSuggestionCard(
+                suggestion = state.breakSuggestion,
+                isLoading = state.isLoadingWeather,
+            )
+        }
 
         Spacer(Modifier.height(8.dp))
 
