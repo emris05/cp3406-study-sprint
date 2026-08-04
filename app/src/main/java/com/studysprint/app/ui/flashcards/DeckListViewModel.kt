@@ -7,6 +7,7 @@ import com.studysprint.app.data.repository.FlashcardRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -23,6 +24,7 @@ class DeckListViewModel @Inject constructor(
 ) : ViewModel() {
 
     val uiState: StateFlow<DeckListUiState> = repository.observeDecks()
+        .map { decks -> DeckListUiState(decks = decks, isLoading = false) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

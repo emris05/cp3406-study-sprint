@@ -7,6 +7,7 @@ import com.studysprint.app.data.repository.TaskRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -21,9 +22,7 @@ class TasksViewModel @Inject constructor(
 ) : ViewModel() {
 
     val uiState: StateFlow<TasksUiState> = repository.observeActiveTasks()
-        .let { flow ->
-            kotlinx.coroutines.flow.map(flow) { TasksUiState(it) }
-        }
+        .map { tasks -> TasksUiState(tasks = tasks) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
