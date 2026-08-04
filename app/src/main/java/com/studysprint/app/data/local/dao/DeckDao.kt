@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface DeckDao {
 
-    @Query("SELECT * FROM decks ORDER BY createdAt DESC")
+    @Query("SELECT * FROM decks ORDER BY created_at DESC")
     fun observeAll(): Flow<List<DeckEntity>>
 
     @Query("SELECT * FROM decks WHERE id = :id")

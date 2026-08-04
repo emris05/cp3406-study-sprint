@@ -11,16 +11,16 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface CardDao {
 
-    @Query("SELECT * FROM cards WHERE deckId = :deckId ORDER BY createdAt DESC")
+    @Query("SELECT * FROM cards WHERE deck_id = :deckId ORDER BY created_at DESC")
     fun observeByDeck(deckId: Long): Flow<List<CardEntity>>
 
-    @Query("SELECT * FROM cards WHERE deckId = :deckId AND dueEpochMillis <= :nowMillis ORDER BY dueEpochMillis ASC")
+    @Query("SELECT * FROM cards WHERE deck_id = :deckId AND due_epoch_millis <= :nowMillis ORDER BY due_epoch_millis ASC")
     suspend fun getDueCards(deckId: Long, nowMillis: Long): List<CardEntity>
 
-    @Query("SELECT COUNT(*) FROM cards WHERE deckId = :deckId")
+    @Query("SELECT COUNT(*) FROM cards WHERE deck_id = :deckId")
     fun observeCardCount(deckId: Long): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM cards WHERE deckId = :deckId AND dueEpochMillis <= :nowMillis")
+    @Query("SELECT COUNT(*) FROM cards WHERE deck_id = :deckId AND due_epoch_millis <= :nowMillis")
     suspend fun getDueCount(deckId: Long, nowMillis: Long): Int
 
     @Query("SELECT * FROM cards WHERE id = :id")
