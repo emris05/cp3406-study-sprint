@@ -27,7 +27,7 @@ class DeckDetailViewModel @Inject constructor(
     private val repository: FlashcardRepository,
 ) : ViewModel() {
 
-    private val deckId: Long = savedStateHandle.get<Long>("deckId") ?: 0L
+    private val deckId: Long = savedStateHandle.get<String>("deckId")?.toLongOrNull() ?: 0L
 
     val uiState: StateFlow<DeckDetailUiState> = repository.observeCards(deckId)
         .map { cards ->

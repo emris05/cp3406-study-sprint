@@ -33,7 +33,7 @@ class ReviewViewModel @Inject constructor(
     private val repository: FlashcardRepository,
 ) : ViewModel() {
 
-    private val deckId: Long = savedStateHandle.get<Long>("deckId") ?: 0L
+    private val deckId: Long = savedStateHandle.get<String>("deckId")?.toLongOrNull() ?: 0L
     private val _uiState = MutableStateFlow(ReviewUiState())
     val uiState: StateFlow<ReviewUiState> = _uiState.asStateFlow()
 
