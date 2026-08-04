@@ -1,5 +1,6 @@
 package com.studysprint.app.data.local.dao
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
@@ -41,6 +42,6 @@ interface SessionDao {
 
 /** Result of the per-task duration aggregation. */
 data class TaskDurationProjection(
-    val taskId: Long,
-    val totalSeconds: Long,
+    @ColumnInfo(name = "taskId") val taskId: Long,
+    @ColumnInfo(name = "totalSeconds") val totalSeconds: Long,
 )

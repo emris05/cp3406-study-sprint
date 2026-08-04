@@ -1,5 +1,6 @@
 package com.studysprint.app.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
@@ -18,21 +19,21 @@ import androidx.room.PrimaryKey
         ForeignKey(
             entity = DeckEntity::class,
             parentColumns = ["id"],
-            childColumns = ["deckId"],
+            childColumns = ["deck_id"],
             onDelete = ForeignKey.CASCADE,
         ),
     ],
-    indices = [Index("deckId"), Index("dueEpochMillis")],
+    indices = [Index("deck_id"), Index("due_epoch_millis")],
 )
 data class CardEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val deckId: Long,
+    @ColumnInfo(name = "deck_id") val deckId: Long,
     val front: String,
     val back: String,
     // SM-2 scheduling state
     val repetitions: Int = 0,
-    val easeFactor: Double = 2.5,
-    val intervalDays: Int = 0,
-    val dueEpochMillis: Long = 0L,
-    val createdAt: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "ease_factor") val easeFactor: Double = 2.5,
+    @ColumnInfo(name = "interval_days") val intervalDays: Int = 0,
+    @ColumnInfo(name = "due_epoch_millis") val dueEpochMillis: Long = 0L,
+    @ColumnInfo(name = "created_at") val createdAt: Long = System.currentTimeMillis(),
 )

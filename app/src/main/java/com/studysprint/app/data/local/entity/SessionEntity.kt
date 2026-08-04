@@ -1,5 +1,6 @@
 package com.studysprint.app.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -14,7 +15,7 @@ import androidx.room.PrimaryKey
 )
 data class SessionEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val taskId: Long? = null,
-    val durationSeconds: Long,
-    val completedAt: Long = System.currentTimeMillis(),
+    @ColumnInfo(name = "task_id") val taskId: Long? = null,
+    @ColumnInfo(name = "duration_seconds") val durationSeconds: Long,
+    @ColumnInfo(name = "completed_at") val completedAt: Long = System.currentTimeMillis(),
 )
