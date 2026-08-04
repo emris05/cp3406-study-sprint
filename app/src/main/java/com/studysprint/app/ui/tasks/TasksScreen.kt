@@ -1,24 +1,29 @@
 package com.studysprint.app.ui.tasks
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.PlayCircle
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +44,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.studysprint.app.ui.components.formatClock
+import com.studysprint.app.ui.theme.Dimens
+import com.studysprint.app.ui.theme.IndigoSoft
+import com.studysprint.app.ui.theme.SuccessGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,29 +60,42 @@ fun TasksScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tasks") },
+                title = { Text("Tasks", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Outlined.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
                     }
                 },
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAdd = true }) {
-                Icon(Icons.Outlined.Add, contentDescription = "Add task")
-            }
+            ExtendedFloatingActionButton(
+                onClick = { showAdd = true },
+                icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
+                text = { Text("New task") },
+            )
         },
     ) { padding ->
         if (state.tasks.isEmpty()) {
             Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("No tasks yet. Tap + to add one.")
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        "No tasks yet",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Text(
+                        "Tap New task to add one",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 16.dp),
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = Dimens.md),
+                verticalArrangement = Arrangement.spacedBy(Dimens.sm),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = Dimens.md),
             ) {
                 items(state.tasks, key = { it.id }) { task ->
                     TaskRow(
@@ -119,19 +140,34 @@ private fun TaskRow(
     onComplete: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(Dimens.cornerMedium),
+        colors = CardDefaults.cardColors(
+            containerColor = if (task.isActive) MaterialTheme.colorScheme.primaryContainer
+            else MaterialTheme.colorScheme.surface,
+        ),
+    ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier.padding(Dimens.md).fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Column(modifier = Modifier.padding(end = 8.dp)) {
+            Column(modifier = Modifier.padding(end = Dimens.sm)) {
                 Text(task.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(
                     "${formatClock(task.totalFocusSeconds)} focused",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                if (task.isActive) {
+                    Text(
+                        "ACTIVE",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = IndigoSoft,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             }
             Row {
                 IconButton(onClick = onSetActive) {
@@ -142,7 +178,7 @@ private fun TaskRow(
                     )
                 }
                 IconButton(onClick = onComplete) {
-                    Icon(Icons.Outlined.CheckCircle, contentDescription = "Mark complete")
+                    Icon(Icons.Outlined.CheckCircle, contentDescription = "Mark complete", tint = SuccessGreen)
                 }
                 IconButton(onClick = onDelete) {
                     Icon(Icons.Outlined.Delete, contentDescription = "Delete")

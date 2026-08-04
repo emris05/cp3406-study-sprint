@@ -1,5 +1,6 @@
 package com.studysprint.app.util
 
+import android.content.Context
 import android.media.AudioManager
 import android.media.ToneGenerator
 import android.os.Build
@@ -7,7 +8,6 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import androidx.core.content.getSystemService
-import android.content.Context
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -29,24 +29,26 @@ class PhaseAlerterImpl @Inject constructor(
     @ApplicationContext private val context: Context,
 ) : PhaseAlerter {
 
-    // ToneGenerator is Android-only but cheap to create. Failures (e.g. in
-    // unit tests) are swallowed so a missing audio service never crashes the app.
     override fun phaseComplete(soundEnabled: Boolean) {
         vibrate()
         if (soundEnabled) playTone()
     }
 
     private fun playTone() {
-        runCatching {
-            // TONE_PROP_BEEP is a short, gentle chime — less jarring than a ringtone.
-            ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80).use { tone ->
-                tone.startTone(ToneGenerator.TONE_PROP_BEEP, 200)
-            }
+        var tone: ToneGenerator? = null
+        try {
+            // TONE_PROP_BEEP is a short, gentle chime.
+            tone = ToneGenerator(AudioManager.STREAM_NOTIFICATION, 80)
+            tone.startTone(ToneGenerator.TONE_PROP_BEEP, 200)
+        } catch (_: Throwable) {
+            // Missing audio service / unexpected failure — never crash the app.
+        } finally {
+            tone?.release()
         }
     }
 
     private fun vibrate() {
-        runCatching {
+        try {
             val vibrator: Vibrator? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 context.getSystemService<VibratorManager>()?.defaultVibrator
             } else {
@@ -61,6 +63,8 @@ class PhaseAlerterImpl @Inject constructor(
                     it.vibrate(150)
                 }
             }
+        } catch (_: Throwable) {
+            // Vibration unavailable — non-fatal.
         }
     }
 }

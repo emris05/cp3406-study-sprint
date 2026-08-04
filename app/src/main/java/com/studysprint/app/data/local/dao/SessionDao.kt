@@ -20,6 +20,9 @@ interface SessionDao {
     @Query("SELECT IFNULL(SUM(duration_seconds), 0) FROM sessions")
     fun observeTotalFocusSeconds(): Flow<Long>
 
+    @Query("SELECT IFNULL(SUM(duration_seconds), 0) FROM sessions WHERE completed_at >= :sinceMillis")
+    fun observeFocusSecondsSince(sinceMillis: Long): Flow<Long>
+
     @Query("SELECT COUNT(*) FROM sessions")
     fun observeSessionCount(): Flow<Int>
 
@@ -35,6 +38,9 @@ interface SessionDao {
 
     @Query("SELECT completed_at FROM sessions ORDER BY completed_at DESC")
     suspend fun getAllCompletionTimestamps(): List<Long>
+
+    @Query("SELECT completed_at FROM sessions ORDER BY completed_at DESC")
+    fun observeCompletionTimestamps(): Flow<List<Long>>
 
     @Query("DELETE FROM sessions")
     suspend fun clear()

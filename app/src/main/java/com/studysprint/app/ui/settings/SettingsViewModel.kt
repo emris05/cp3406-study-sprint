@@ -7,6 +7,7 @@ import com.studysprint.app.data.repository.SessionRepository
 import com.studysprint.app.data.repository.SettingsRepository
 import com.studysprint.app.data.repository.TaskRepository
 import com.studysprint.app.ui.theme.DarkModeChoice
+import com.studysprint.app.work.ReminderScheduler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,7 @@ class SettingsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val sessionRepository: SessionRepository,
     private val taskRepository: TaskRepository,
+    private val reminderScheduler: ReminderScheduler,
 ) : ViewModel() {
 
     val uiState: StateFlow<AppSettings?> = settingsRepository.observe()
@@ -35,13 +37,26 @@ class SettingsViewModel @Inject constructor(
     fun setSoundEnabled(value: Boolean) = update { it.copy(soundEnabled = value) }
     fun setDarkMode(value: DarkModeChoice) = update { it.copy(darkMode = value) }
     fun setWeatherCity(value: String) = update { it.copy(weatherCity = value) }
-    fun setReminderEnabled(value: Boolean) = update { it.copy(reminderEnabled = value) }
-    fun setReminderTime(hour: Int, minute: Int) = update { it.copy(reminderHour = hour, reminderMinute = minute) }
+
+    fun setReminderEnabled(value: Boolean) = viewModelScope.launch {
+        settingsRepository.update { it.copy(reminderEnabled = value) }
+        if (value) {
+            val s = settingsRepository.get()
+            reminderScheduler.schedule(s.reminderHour, s.reminderMinute)
+        } else {
+            reminderScheduler.cancel()
+        }
+    }
+
+    fun setReminderTime(hour: Int, minute: Int) = viewModelScope.launch {
+        settingsRepository.update { it.copy(reminderHour = hour, reminderMinute = minute) }
+        // Re-schedule if currently enabled, so the new time takes effect.
+        if (settingsRepository.get().reminderEnabled) reminderScheduler.schedule(hour, minute)
+    }
 
     fun clearAllData() = viewModelScope.launch {
         sessionRepository.clear()
-        // Tasks are harder to bulk-clear via the dao; loop for now.
-        // (Could add a clearAll() to TaskRepository in a future iteration.)
+        taskRepository.clearAll()
     }
 
     private fun update(transform: (AppSettings) -> AppSettings) = viewModelScope.launch {

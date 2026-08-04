@@ -26,8 +26,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Stateless UI-facing snapshot of the focus screen. Everything the Compose layer
- * needs, nothing it doesn't.
+ * Stateless UI-facing snapshot of the focus screen.
  */
 data class FocusUiState(
     val phase: TimerPhase = TimerPhase.Focus,
@@ -43,14 +42,9 @@ data class FocusUiState(
 /**
  * Drives the [TimerEngine] and exposes a single [FocusUiState] to Compose.
  *
- * A 1-second ticker coroutine refreshes the displayed countdown while running.
- * The engine itself never sleeps — see [TimerEngine] for why. When a Focus
- * phase completes we persist a [com.studysprint.app.data.model.FocusSession]
- * and credit time to the active task.
- *
- * The active task id is captured *when a focus phase starts* and held for that
- * phase's duration, so crediting goes to the right task even if the user
- * switches tasks mid-session.
+ * The timer state is re-derived whenever settings change (so adjusting the
+ * focus length in Settings updates the running timer). The engine itself is
+ * driven off the system clock — see [TimerEngine] for why.
  */
 @HiltViewModel
 class FocusViewModel @Inject constructor(
@@ -66,18 +60,26 @@ class FocusViewModel @Inject constructor(
     private val _timerState = MutableStateFlow<TimerState?>(null)
     private val _breakSuggestion = MutableStateFlow<BreakSuggestion?>(null)
     private val _isLoadingWeather = MutableStateFlow(false)
-    /** The task id locked in at the start of the current focus phase, if any. */
     private var focusPhaseTaskId: Long? = null
-    /** Latest snapshot of the active task, for display. */
-    private val activeTaskFlow = taskRepository.observeActiveTask()
     private var tickJob: Job? = null
 
     val uiState: StateFlow<FocusUiState> = combine(
         _timerState,
-        activeTaskFlow,
+        taskRepository.observeActiveTask(),
         settingsRepository.observe(),
-    ) { timer, activeTask, settings ->
-        val resolved = timer ?: engine.initialState(settings).also { _timerState.value = it }
+        _breakSuggestion,
+        _isLoadingWeather,
+    ) { timer, activeTask, settings, suggestion, loading ->
+        // Apply the latest settings to the timer state whenever they change.
+        // When the timer isn't running, this updates the displayed duration so
+        // the user sees their new focus length immediately. The guard against
+        // writing when unchanged prevents a feedback loop.
+        val resolved = when {
+            timer == null -> engine.initialState(settings)
+            timer.status != TimerStatus.Running -> engine.applySettings(timer, settings)
+            else -> timer
+        }
+        if (resolved != timer) _timerState.value = resolved
         FocusUiState(
             phase = resolved.phase,
             remainingSeconds = resolved.remainingSeconds,
@@ -85,8 +87,8 @@ class FocusViewModel @Inject constructor(
             status = resolved.status,
             completedFocusSessions = resolved.completedFocusSessions,
             activeTask = activeTask,
-            breakSuggestion = _breakSuggestion.value,
-            isLoadingWeather = _isLoadingWeather.value,
+            breakSuggestion = suggestion,
+            isLoadingWeather = loading,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -94,7 +96,6 @@ class FocusViewModel @Inject constructor(
         initialValue = FocusUiState(),
     )
 
-    /** Begin (or resume) the countdown. Captures the active task for this focus phase. */
     fun start() = viewModelScope.launch {
         val settings = settingsRepository.get()
         val current = currentOrInitial(settings)
@@ -112,7 +113,6 @@ class FocusViewModel @Inject constructor(
         _timerState.value = engine.pause(currentOrInitial(settingsRepository.get()))
     }
 
-    /** Skip the current phase without crediting any focus time. */
     fun skip() = viewModelScope.launch {
         tickJob?.cancel()
         tickJob = null
@@ -129,6 +129,15 @@ class FocusViewModel @Inject constructor(
         _timerState.value = engine.reset(currentOrInitial(settingsRepository.get()), settingsRepository.get())
     }
 
+    /**
+     * Quick-set the focus duration from a preset chip on the Focus screen.
+     * Updates settings; the uiState combine picks up the change and refreshes
+     * the displayed duration (when the timer isn't running).
+     */
+    fun setFocusMinutes(minutes: Int) = viewModelScope.launch {
+        settingsRepository.update { it.copy(focusMinutes = minutes.coerceIn(AppSettings.FOCUS_RANGE)) }
+    }
+
     private fun startTicking() {
         tickJob?.cancel()
         tickJob = viewModelScope.launch {
@@ -138,15 +147,11 @@ class FocusViewModel @Inject constructor(
                 val current = _timerState.value ?: return@launch
                 val ticked = engine.tick(current)
                 if (engine.isPhaseComplete(ticked)) {
-                    // Record the completed focus phase before advancing.
                     if (ticked.phase == TimerPhase.Focus) recordFocusSession(ticked)
                     val advanced = engine.advance(ticked, settings)
                     _timerState.value = advanced
-                    // Alert the user that the phase is over (sound + haptic).
                     phaseAlerter.phaseComplete(soundEnabled = settings.soundEnabled)
-                    // When a break begins, fetch weather + pick a break activity.
                     if (advanced.phase.isBreak) loadBreakSuggestion(settings.weatherCity)
-                    // Auto-start the next phase so the cycle keeps flowing.
                     _timerState.value = engine.start(advanced)
                 } else {
                     _timerState.value = ticked
@@ -164,13 +169,7 @@ class FocusViewModel @Inject constructor(
         if (state.phase == TimerPhase.Focus) focusPhaseTaskId = null
     }
 
-    /**
-     * Fetch weather for [city] and pick a matching break activity. If the fetch
-     * fails (offline, bad key) we still suggest something from the offline
-     * library — never leave the user staring at an empty break screen.
-     */
     private fun loadBreakSuggestion(city: String) {
-        // Clear the old card first so a stale suggestion never lingers.
         _breakSuggestion.value = null
         _isLoadingWeather.value = true
         viewModelScope.launch {

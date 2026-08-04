@@ -5,11 +5,13 @@ import androidx.lifecycle.viewModelScope
 import com.studysprint.app.data.model.StudyTask
 import com.studysprint.app.data.repository.SessionRepository
 import com.studysprint.app.data.repository.TaskRepository
+import com.studysprint.app.util.StatsCalculator
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import java.util.Calendar
 import javax.inject.Inject
 
 data class HomeUiState(
@@ -25,16 +27,24 @@ class HomeViewModel @Inject constructor(
     taskRepository: TaskRepository,
 ) : ViewModel() {
 
+    private val startOfTodayMillis: Long = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+
     val uiState: StateFlow<HomeUiState> = combine(
-        sessionRepository.observeTotalFocusSeconds(),
+        sessionRepository.observeFocusSecondsSince(startOfTodayMillis),
         sessionRepository.observeSessionCount(),
         taskRepository.observeActiveTask(),
-    ) { total, count, task ->
+        sessionRepository.observeCompletionTimestamps(),
+    ) { todaySeconds, count, task, timestamps ->
         HomeUiState(
-            todayFocusSeconds = total, // simplified — full today-only calc in stats
+            todayFocusSeconds = todaySeconds,
             totalSessions = count,
             activeTask = task,
-            streakDays = 0, // computed in StatsViewModel; kept simple here
+            streakDays = StatsCalculator.calculateStreak(timestamps, System.currentTimeMillis()),
         )
     }.stateIn(
         scope = viewModelScope,

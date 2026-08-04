@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -34,29 +36,29 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.studysprint.app.R
 import com.studysprint.app.ui.theme.DarkModeChoice
+import com.studysprint.app.ui.theme.Dimens
 
 @Composable
 fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val settings by viewModel.uiState.collectAsStateWithLifecycle()
     var showClearConfirm by remember { mutableStateOf(false) }
 
-    val s = settings ?: return // wait for first emission
+    val s = settings ?: return
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp),
+            .padding(horizontal = Dimens.md, vertical = Dimens.lg),
+        verticalArrangement = Arrangement.spacedBy(Dimens.md),
     ) {
-        Text("Settings", style = MaterialTheme.typography.headlineLarge)
+        Text("Settings", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
 
-        // --- Timer section ---
-        Section("Timer") {
+        SettingsGroup("Timer") {
             SliderRow(
                 label = stringResource(R.string.settings_focus_length) + " — ${s.focusMinutes}m",
                 value = s.focusMinutes.toFloat(),
-                range = AppSettings_FocusRange,
+                range = 5f..90f,
                 onChange = { viewModel.setFocusMinutes(it.toInt()) },
             )
             SliderRow(
@@ -84,8 +86,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             )
         }
 
-        // --- Appearance ---
-        Section("Appearance") {
+        SettingsGroup("Appearance") {
             Text("Dark mode", style = MaterialTheme.typography.bodyMedium)
             val choices = DarkModeChoice.entries
             SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
@@ -105,8 +106,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             }
         }
 
-        // --- Weather ---
-        Section("Weather") {
+        SettingsGroup("Weather") {
             OutlinedTextField(
                 value = s.weatherCity,
                 onValueChange = viewModel::setWeatherCity,
@@ -119,8 +119,7 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             )
         }
 
-        // --- Reminders ---
-        Section("Reminders") {
+        SettingsGroup("Reminders") {
             SwitchRow(
                 label = stringResource(R.string.settings_reminder_enabled),
                 checked = s.reminderEnabled,
@@ -135,14 +134,16 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             }
         }
 
-        // --- Your data (ethics section) ---
-        Section("Your data") {
+        SettingsGroup("Your data") {
             Text(
                 stringResource(R.string.settings_privacy_note),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            OutlinedButton(onClick = { showClearConfirm = true }) {
+            OutlinedButton(
+                onClick = { showClearConfirm = true },
+                shape = RoundedCornerShape(Dimens.cornerMedium),
+            ) {
                 Text(stringResource(R.string.settings_clear_data))
             }
         }
@@ -165,10 +166,21 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+private fun SettingsGroup(title: String, content: @Composable () -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
         Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        content()
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(Dimens.cornerMedium),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        ) {
+            Column(
+                modifier = Modifier.padding(Dimens.md),
+                verticalArrangement = Arrangement.spacedBy(Dimens.md),
+            ) {
+                content()
+            }
+        }
     }
 }
 
@@ -179,7 +191,7 @@ private fun SliderRow(
     range: ClosedFloatingPointRange<Float>,
     onChange: (Float) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(Dimens.xs)) {
         Text(label, style = MaterialTheme.typography.bodyMedium)
         Slider(value = value, valueRange = range, onValueChange = onChange)
     }
@@ -196,6 +208,3 @@ private fun SwitchRow(label: String, checked: Boolean, onChange: (Boolean) -> Un
         Switch(checked = checked, onCheckedChange = onChange)
     }
 }
-
-// Local alias so the slider range reads cleanly without importing AppSettings in the composable.
-private val AppSettings_FocusRange = 5f..90f

@@ -30,43 +30,47 @@ fun StudySprintTheme(
 
     val colorScheme = if (isDark) {
         darkColorScheme(
-            primary = Indigo,
-            onPrimary = DarkOnSurface,
+            primary = IndigoSoft,
+            onPrimary = DarkBackground,
             primaryContainer = IndigoDark,
             onPrimaryContainer = DarkOnSurface,
             secondary = Amber,
             onSecondary = DarkBackground,
             secondaryContainer = AmberDark,
             onSecondaryContainer = DarkOnSurface,
+            tertiary = SuccessGreen,
+            onTertiary = DarkBackground,
             background = DarkBackground,
             onBackground = DarkOnBackground,
             surface = DarkSurface,
             onSurface = DarkOnSurface,
             surfaceVariant = DarkSurfaceVariant,
-            onSurfaceVariant = DarkOutline,
+            onSurfaceVariant = DarkOnSurfaceVariant,
             outline = DarkOutline,
+            outlineVariant = DarkSurfaceHighlight,
         )
     } else {
         lightColorScheme(
             primary = Indigo,
             onPrimary = LightSurface,
-            primaryContainer = IndigoDark,
-            onPrimaryContainer = LightSurface,
-            secondary = Amber,
-            onSecondary = LightOnBackground,
-            secondaryContainer = LightSurfaceVariant,
+            primaryContainer = LightSurfaceVariant,
+            onPrimaryContainer = IndigoDark,
+            secondary = AmberDark,
+            onSecondary = LightSurface,
+            secondaryContainer = AmberSoft,
             onSecondaryContainer = LightOnBackground,
+            tertiary = SuccessGreen,
+            onTertiary = LightSurface,
             background = LightBackground,
             onBackground = LightOnBackground,
             surface = LightSurface,
             onSurface = LightOnSurface,
             surfaceVariant = LightSurfaceVariant,
-            onSurfaceVariant = LightOutline,
+            onSurfaceVariant = LightOnSurfaceVariant,
             outline = LightOutline,
         )
     }
 
-    // Match the status / nav bar to the background for an immersive feel.
     val view = LocalView.current
     if (!view.isInEditMode) {
         androidx.compose.runtime.SideEffect {

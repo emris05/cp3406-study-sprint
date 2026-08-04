@@ -1,24 +1,29 @@
 package com.studysprint.app.ui.flashcards
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,6 +43,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.studysprint.app.ui.theme.Amber
+import com.studysprint.app.ui.theme.Dimens
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,40 +59,48 @@ fun DeckDetailScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(state.deckName.ifEmpty { "Deck" }) },
+                title = { Text(state.deckName.ifEmpty { "Deck" }, fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Outlined.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
                     }
                 },
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddCard = true }) {
-                Icon(Icons.Outlined.Add, contentDescription = "Add card")
-            }
+            ExtendedFloatingActionButton(
+                onClick = { showAddCard = true },
+                icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
+                text = { Text("Add card") },
+            )
         },
     ) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
             if (state.dueCount > 0) {
                 Button(
                     onClick = { onReview(state.deckId) },
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(Dimens.md),
+                    shape = RoundedCornerShape(Dimens.cornerMedium),
                 ) {
                     Icon(Icons.Outlined.PlayArrow, contentDescription = null)
-                    Text("Review ${state.dueCount} due cards")
+                    Spacer(Modifier.size(Dimens.sm))
+                    Text("Review ${state.dueCount} due cards", fontWeight = FontWeight.SemiBold)
                 }
             }
 
             if (state.cards.isEmpty()) {
                 Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("No cards yet. Tap + to add one.")
+                    Text(
+                        "No cards yet. Tap Add card to create one.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             } else {
                 LazyColumn(
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 8.dp),
+                    modifier = Modifier.fillMaxSize().padding(horizontal = Dimens.md),
+                    verticalArrangement = Arrangement.spacedBy(Dimens.sm),
+                    contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = Dimens.sm),
                 ) {
                     items(state.cards, key = { it.id }) { card ->
                         CardRow(
@@ -112,13 +127,17 @@ fun DeckDetailScreen(
 
 @Composable
 private fun CardRow(front: String, back: String, onDelete: () -> Unit) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(Dimens.cornerMedium),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
         Row(
-            modifier = Modifier.padding(16.dp).fillMaxWidth(),
+            modifier = Modifier.padding(Dimens.md).fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = Modifier.padding(end = 8.dp)) {
+            Column(modifier = Modifier.padding(end = Dimens.sm)) {
                 Text(front, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.SemiBold)
                 Text(
                     back,
@@ -127,7 +146,7 @@ private fun CardRow(front: String, back: String, onDelete: () -> Unit) {
                 )
             }
             IconButton(onClick = onDelete) {
-                Icon(Icons.Outlined.Delete, contentDescription = "Delete card")
+                Icon(Icons.Outlined.Delete, contentDescription = "Delete card", tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -142,7 +161,7 @@ private fun AddCardDialog(onDismiss: () -> Unit, onAdd: (String, String) -> Unit
         onDismissRequest = onDismiss,
         title = { Text("New card") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
                 OutlinedTextField(
                     value = front,
                     onValueChange = { front = it },

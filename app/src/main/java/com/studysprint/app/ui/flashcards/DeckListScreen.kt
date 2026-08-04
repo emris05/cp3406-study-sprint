@@ -1,18 +1,27 @@
 package com.studysprint.app.ui.flashcards
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +41,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.studysprint.app.ui.theme.Dimens
+import com.studysprint.app.ui.theme.IndigoSoft
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,38 +57,49 @@ fun DeckListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Flashcards") },
+                title = { Text("Flashcards", fontWeight = FontWeight.SemiBold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Outlined.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Outlined.ArrowBack, contentDescription = "Back")
                     }
                 },
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = { showAddDialog = true }) {
-                Icon(Icons.Outlined.Add, contentDescription = "New deck")
-            }
+            ExtendedFloatingActionButton(
+                onClick = { showAddDialog = true },
+                icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
+                text = { Text("New deck") },
+            )
         },
     ) { padding ->
         if (state.decks.isEmpty() && !state.isLoading) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text("No decks yet", style = MaterialTheme.typography.titleLarge)
-                Text(
-                    "Tap + to create your first deck",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Dimens.sm),
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(IndigoSoft.copy(alpha = 0.15f), RoundedCornerShape(20.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(Icons.AutoMirrored.Outlined.MenuBook, contentDescription = null, tint = IndigoSoft, modifier = Modifier.size(32.dp))
+                    }
+                    Text("No decks yet", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        "Create a deck to start reviewing",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
         } else {
             LazyColumn(
-                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 16.dp),
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = Dimens.md),
+                verticalArrangement = Arrangement.spacedBy(Dimens.sm),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = Dimens.md),
             ) {
                 items(state.decks, key = { it.id }) { deck ->
                     DeckRow(
@@ -107,21 +129,36 @@ private fun DeckRow(
     onClick: () -> Unit,
     onDelete: () -> Unit,
 ) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxSize()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(deck.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
-            if (deck.description.isNotBlank()) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(Dimens.cornerMedium),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+    ) {
+        Row(
+            modifier = Modifier.padding(Dimens.md).fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column(modifier = Modifier.padding(end = Dimens.sm)) {
+                Text(deck.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                if (deck.description.isNotBlank()) {
+                    Text(
+                        deck.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
                 Text(
-                    deck.description,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    "${deck.cardCount} cards",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IndigoSoft,
+                    fontWeight = FontWeight.Medium,
                 )
             }
-            Text(
-                "${deck.cardCount} cards",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
+            IconButton(onClick = onDelete) {
+                Text("×", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
@@ -134,11 +171,11 @@ private fun NewDeckDialog(
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
 
-    androidx.compose.material3.AlertDialog(
+    AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("New deck") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(Dimens.sm)) {
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },

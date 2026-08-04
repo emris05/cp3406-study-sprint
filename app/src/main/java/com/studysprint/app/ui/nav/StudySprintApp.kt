@@ -16,7 +16,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -34,8 +33,9 @@ import com.studysprint.app.ui.tasks.TasksScreen
 
 /**
  * Root composable. Holds the [NavHost] and the bottom navigation bar.
- * Tasks is reachable from Home and Focus (not a bottom-nav item) to keep
- * the bar uncluttered with the four core screens.
+ *
+ * The bottom bar is always visible so the user can switch tabs from anywhere,
+ * including sub-screens like Tasks and Flashcards.
  */
 @Composable
 fun StudySprintApp() {
@@ -45,32 +45,40 @@ fun StudySprintApp() {
 
     Scaffold(
         bottomBar = {
-            // Only show the bottom bar on the four core screens.
-            if (currentRoute in bottomNavRoutes.map { it.route }) {
-                NavigationBar {
-                    bottomNavRoutes.forEach { route ->
-                        val label = when (route) {
-                            Route.Home -> stringResource(R.string.nav_home)
-                            Route.Focus -> stringResource(R.string.nav_focus)
-                            Route.Stats -> stringResource(R.string.nav_stats)
-                            Route.Settings -> stringResource(R.string.nav_settings)
-                            else -> ""
-                        }
-                        val icon = when (route) {
-                            Route.Home -> Icons.Outlined.Home
-                            Route.Focus -> Icons.Outlined.Timer
-                            Route.Stats -> Icons.Outlined.BarChart
-                            Route.Settings -> Icons.Outlined.Settings
-                            else -> Icons.Outlined.Home
-                        }
-                        val selected = backStackEntry?.destination?.hierarchy?.any { it.route == route.route } == true
-                        NavigationBarItem(
-                            selected = selected,
-                            onClick = { navController.navigateTo(route) },
-                            icon = { Icon(icon, contentDescription = label) },
-                            label = { Text(label) },
-                        )
+            NavigationBar {
+                bottomNavRoutes.forEach { route ->
+                    val label = when (route) {
+                        Route.Home -> stringResource(R.string.nav_home)
+                        Route.Focus -> stringResource(R.string.nav_focus)
+                        Route.Stats -> stringResource(R.string.nav_stats)
+                        Route.Settings -> stringResource(R.string.nav_settings)
+                        else -> ""
                     }
+                    val icon = when (route) {
+                        Route.Home -> Icons.Outlined.Home
+                        Route.Focus -> Icons.Outlined.Timer
+                        Route.Stats -> Icons.Outlined.BarChart
+                        Route.Settings -> Icons.Outlined.Settings
+                        else -> Icons.Outlined.Home
+                    }
+                    NavigationBarItem(
+                        selected = currentRoute == route.route,
+                        onClick = {
+                            // Standard bottom-nav pattern: pop up to the start
+                            // destination (saving state), then navigate. This works
+                            // even when tapping the current tab — popUpTo + saveState
+                            // ensures a clean switch without duplicate entries.
+                            navController.navigate(route.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = { Icon(icon, contentDescription = label) },
+                        label = { Text(label) },
+                    )
                 }
             }
         }
@@ -107,7 +115,7 @@ fun StudySprintApp() {
                     onOpenDeck = { deckId -> navController.navigate(Route.DeckDetail.build(deckId)) },
                 )
             }
-            composable(Route.DeckDetail.route) { backStackEntry ->
+            composable(Route.DeckDetail.route) {
                 DeckDetailScreen(
                     onBack = { navController.popBackStack() },
                     onReview = { deckId -> navController.navigate(Route.Review.build(deckId)) },
@@ -117,14 +125,5 @@ fun StudySprintApp() {
                 ReviewScreen(onBack = { navController.popBackStack() })
             }
         }
-    }
-}
-
-/** Standard single-top navigation helper for bottom-nav items. */
-private fun androidx.navigation.NavController.navigateTo(route: Route) {
-    navigate(route.route) {
-        popUpTo(graph.findStartDestination().id) { saveState = true }
-        launchSingleTop = true
-        restoreState = true
     }
 }

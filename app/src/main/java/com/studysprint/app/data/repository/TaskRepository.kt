@@ -20,6 +20,7 @@ interface TaskRepository {
     suspend fun markCompleted(taskId: Long)
     suspend fun delete(taskId: Long)
     suspend fun getById(taskId: Long): StudyTask?
+    suspend fun clearAll()
 }
 
 @Singleton
@@ -49,6 +50,8 @@ class TaskRepositoryImpl @Inject constructor(
     override suspend fun delete(taskId: Long) = dao.delete(taskId)
 
     override suspend fun getById(taskId: Long): StudyTask? = dao.getById(taskId)?.toDomain()
+
+    override suspend fun clearAll() = dao.clearAll()
 }
 
 /** Helper for creating a fresh task entity without leaking Room types into callers. */

@@ -15,10 +15,12 @@ import javax.inject.Singleton
 interface SessionRepository {
     fun observeAll(): Flow<List<FocusSession>>
     fun observeTotalFocusSeconds(): Flow<Long>
+    fun observeFocusSecondsSince(sinceMillis: Long): Flow<Long>
     fun observeSessionCount(): Flow<Int>
     fun observePerTaskSeconds(): Flow<Map<Long, Long>>
     suspend fun record(taskId: Long?, durationSeconds: Long)
     suspend fun getAllCompletionTimestamps(): List<Long>
+    fun observeCompletionTimestamps(): Flow<List<Long>>
     suspend fun clear()
 }
 
@@ -32,6 +34,9 @@ class SessionRepositoryImpl @Inject constructor(
 
     override fun observeTotalFocusSeconds(): Flow<Long> = dao.observeTotalFocusSeconds()
 
+    override fun observeFocusSecondsSince(sinceMillis: Long): Flow<Long> =
+        dao.observeFocusSecondsSince(sinceMillis)
+
     override fun observeSessionCount(): Flow<Int> = dao.observeSessionCount()
 
     override fun observePerTaskSeconds(): Flow<Map<Long, Long>> =
@@ -42,6 +47,8 @@ class SessionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getAllCompletionTimestamps(): List<Long> = dao.getAllCompletionTimestamps()
+
+    override fun observeCompletionTimestamps(): Flow<List<Long>> = dao.observeCompletionTimestamps()
 
     override suspend fun clear() = dao.clear()
 }

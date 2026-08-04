@@ -27,17 +27,19 @@ class StatsViewModel @Inject constructor(
     taskRepository: TaskRepository,
 ) : ViewModel() {
 
-    // NOTE: streak requires reading all session timestamps once. We compute it
-    // from the per-task + session flows reactively; full timestamp list is read
-    // on first emission. For simplicity the streak is computed in StatsCalculator
-    // when sessions change — see StatsCalculatorTests for the pure logic.
     val uiState: StateFlow<StatsUiState> = combine(
         sessionRepository.observeTotalFocusSeconds(),
         sessionRepository.observeSessionCount(),
-        sessionRepository.observePerTaskSeconds(),
-        taskRepository.observeActiveTasks(),
-    ) { total, count, perTask, tasks ->
-        val timestamps = sessionRepository.getAllCompletionTimestamps()
+        // Combine the per-task + tasks + timestamps into a single derived flow first
+        // so we stay within combine's 5-arg limit.
+        combine(
+            sessionRepository.observePerTaskSeconds(),
+            taskRepository.observeActiveTasks(),
+            sessionRepository.observeCompletionTimestamps(),
+        ) { perTask, tasks, timestamps ->
+            Triple(perTask, tasks, timestamps)
+        },
+    ) { total, count, (perTask, tasks, timestamps) ->
         StatsUiState(
             totalFocusSeconds = total,
             totalSessions = count,
